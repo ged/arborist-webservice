@@ -6,7 +6,7 @@ rescue LoadError
 	abort "This Rakefile requires hoe (gem install hoe)"
 end
 
-GEMSPEC = 'arborist-node-webservice.gemspec'
+GEMSPEC = 'arborist-webservice.gemspec'
 
 
 Hoe.plugin :mercurial
@@ -14,23 +14,29 @@ Hoe.plugin :signing
 Hoe.plugin :deveiate
 
 Hoe.plugins.delete :rubyforge
-Hoe.plugins.delete :gemcutter # Remove for public gems
 
-hoespec = Hoe.spec 'arborist-node-webservice' do |spec|
-	spec.readme_file = 'README.rdoc'
-	spec.history_file = 'History.rdoc'
-	spec.extra_rdoc_files = FileList[ '*.rdoc' ]
-	spec.license 'BSD'
+hoespec = Hoe.spec 'arborist-webservice' do |spec|
+	spec.readme_file = 'README.md'
+	spec.history_file = 'History.md'
+	spec.extra_rdoc_files = FileList[ '*.md' ]
+	spec.license 'BSD-3-Clause'
+	spec.urls = {
+		home:   'http://deveiate.org/projects/arborist-webservice',
+		code:   'http://bitbucket.org/ged/arborist-webservice',
+		docs:   'http://deveiate.org/code/arborist-webservice',
+		github: 'http://github.com/ged/arborist-webservice',
+	}
 
 	spec.developer 'Michael Granger', 'ged@FaerieMUD.org'
 
+	spec.dependency 'arborist', '~> 0'
 	spec.dependency 'loggability', '~> 0.11'
+	spec.dependency 'httpclient', '~> 2.7'
 
 	spec.dependency 'hoe-deveiate',            '~> 0.3', :developer
 	spec.dependency 'simplecov',               '~> 0.7', :developer
 	spec.dependency 'rdoc-generator-fivefish', '~> 0.1', :developer
 
-	spec.require_ruby_version( '>=2.2.0' )
 	spec.hg_sign_tags = true if spec.respond_to?( :hg_sign_tags= )
 	spec.check_history_on_release = true if spec.respond_to?( :check_history_on_release= )
 
@@ -67,7 +73,7 @@ if File.directory?( '.hg' )
 		rdoc.markup = 'markdown'
 	    rdoc.rdoc_files.include( "*.rdoc", "ChangeLog", "lib/**/*.rb" )
 	    rdoc.generator = :fivefish
-		rdoc.title = 'Arborist-Node-Webservice'
+		rdoc.title = 'Webservice Node Type for Arborist'
 	    rdoc.rdoc_dir = 'doc'
 	end
 end

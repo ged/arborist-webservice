@@ -1,0 +1,8 @@
+2016-02-08  Michael Granger  <ged@FaerieMUD.org>
+
+	* .document, .editorconfig, .hgignore, .pryrc, .rdoc_options,
+	.rvm.gems, .rvmrc, .simplecov, Gemfile, LICENSE.txt, Rakefile,
+	certs/ged.pem, lib/arborist/node/webservice.rb,
+	spec/arborist/node/webservice_spec.rb, spec/spec_helper.rb:
+	Initial commit.
+	[d318b4f0d795] [tip]

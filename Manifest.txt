@@ -1,0 +1,14 @@
+.document
+.editorconfig
+.rdoc_options
+.simplecov
+ChangeLog
+History.md
+Manifest.txt
+README.md
+Rakefile
+lib/arborist/monitor/webservice.rb
+lib/arborist/node/webservice.rb
+lib/arborist/webservice.rb
+spec/arborist/node/webservice_spec.rb
+spec/spec_helper.rb
