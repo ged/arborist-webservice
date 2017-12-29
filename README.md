@@ -1,13 +1,13 @@
 # Arborist-Webservices
 
 home
-: http://bitbucket.org/ged/Arborist-Webservices
+: http://bitbucket.org/ged/Arborist-Webservice
 
 github
-: https://github.com/ged/arborist-webservices
+: https://github.com/ged/arborist-webservice
 
 docs
-: http://deveiate.org/code/arborist-webservices
+: http://deveiate.org/code/arborist-webservice
 
 
 ## Description
@@ -50,14 +50,14 @@ This would check that an OPTIONS HTTP request to `http://api.example.com/v1/hear
 
 ## Installation
 
-    $ gem install arborist-webservices
+    $ gem install arborist-webservice
 
 
 ## Contributing
 
 You can check out the current development source with Mercurial via its
-{project page}[http://bitbucket.org/ged/arborist-webservices]. Or if you prefer Git, via 
-{its Github mirror}[https://github.com/ged/arborist-webservices].
+{project page}[http://bitbucket.org/ged/arborist-webservice]. Or if you prefer Git, via 
+{its Github mirror}[https://github.com/ged/arborist-webservice].
 
 After checking out the source, run:
 
