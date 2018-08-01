@@ -32,10 +32,11 @@ class Arborist::Node::Webservice < Arborist::Node::Service
 
 	### Create a new Webservice node.
 	def initialize( identifier, host, uri, attributes={}, &block )
-		@uri = URI( uri )
+		@uri = uri
+		uri_obj = URI( uri )
 
-		attributes[:app_protocol] ||= @uri.scheme
-		attributes[:port] ||= @uri.port
+		attributes[:app_protocol] ||= uri_obj.scheme
+		attributes[:port] ||= uri_obj.port
 		attributes[:protocol] = 'tcp'
 		attributes[:app_protocol] = 'http'
 		attributes[:http_method] ||= DEFAULT_HTTP_METHOD
@@ -92,8 +93,7 @@ class Arborist::Node::Webservice < Arborist::Node::Service
 		self.log.debug "Matching %p: %p against %p" % [ key, val, self ]
 		return case key
 			when 'uri'
-				val = URI( val )
-				self.uri == val
+				URI( self.uri ) == URI( val )
 			when 'http_method'
 				self.http_method == val
 			when 'expected_status'
@@ -112,7 +112,7 @@ class Arborist::Node::Webservice < Arborist::Node::Service
 	### monitor state.
 	def operational_values
 		return super.merge(
-			uri: self.uri.to_s,
+			uri: self.uri,
 			http_method: self.http_method,
 			expected_status: self.expected_status,
 			body: self.body,
@@ -142,7 +142,7 @@ class Arborist::Node::Webservice < Arborist::Node::Service
 	### Serialize the resource node.  Return a Hash of the host node's state.
 	def to_h( * )
 		return super.merge(
-			uri: self.uri.to_s,
+			uri: self.uri,
 			http_method: self.http_method,
 			expected_status: self.expected_status,
 			body: self.body,
