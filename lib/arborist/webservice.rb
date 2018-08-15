@@ -32,7 +32,6 @@ module Arborist::Webservice
 	require 'arborist/monitor/webservice'
 	require 'arborist/node/webservice'
 
-	autoload :Connection, 'arborist/webservice/connection'
 	autoload :Constants, 'arborist/webservice/constants'
 
 end # module Arborist::Webservice

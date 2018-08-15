@@ -2,12 +2,20 @@
 
 require_relative '../../spec_helper'
 
+require 'typhoeus'
 require 'arborist/webservice'
 
 
 describe Arborist::Monitor::Webservice do
 
 	using Arborist::TimeRefinements
+
+	before( :each ) do
+		Typhoeus::Expectation.clear
+	end
+	after( :each ) do
+		Typhoeus::Expectation.clear
+	end
 
 
 	describe Arborist::Monitor::Webservice::HTML do
@@ -34,7 +42,7 @@ describe Arborist::Monitor::Webservice do
 
 
 		it "is created with a default timeout" do
-			expect( monitor.timeout ).to be_an( Integer )
+			expect( monitor.timeout ).to be_an( Numeric )
 		end
 
 
@@ -46,21 +54,9 @@ describe Arborist::Monitor::Webservice do
 
 
 		it "runs against a collection of nodes and updates the statuses of each one" do
-			monitor.client = instance_double( HTTPClient )
-
-			msg1 = instance_double( HTTP::Message, ok?: true, status_code: 200, http_version: '1.1' )
-			conn1 = instance_double( HTTPClient::Connection, finished?: true, pop: msg1 )
-			msg2 = instance_double( HTTP::Message, ok?: true, status_code: 200, http_version: '1.1' )
-			conn2 = instance_double( HTTPClient::Connection, finished?: true, pop: msg2 )
-			msg3 = instance_double( HTTP::Message, ok?: true, status_code: 200, http_version: '1.1' )
-			conn3 = instance_double( HTTPClient::Connection, finished?: true, pop: msg3 )
-
-			expect( monitor.client ).to receive( :head_async ).with( webservice_node1.uri.to_s ).
-				and_return( conn1 )
-			expect( monitor.client ).to receive( :head_async ).with( webservice_node2.uri.to_s ).
-				and_return( conn2 )
-			expect( monitor.client ).to receive( :head_async ).with( webservice_node3.uri.to_s ).
-				and_return( conn3 )
+			Typhoeus.stub( /acme/i ).and_return do |req|
+				Typhoeus::Response.new( code: 200, body: "OK" )
+			end
 
 			result = monitor.run( nodes_hash )
 
@@ -69,28 +65,49 @@ describe Arborist::Monitor::Webservice do
 		end
 
 
-		it "sets an error for error response statuses" do
-			monitor.client = instance_double( HTTPClient )
-
-			msg1 = instance_double( HTTP::Message, ok?: true, status_code: 200, http_version: '1.1' )
-			conn1 = instance_double( HTTPClient::Connection, finished?: true, pop: msg1 )
-			msg2 = instance_double( HTTP::Message, ok?: true, status_code: 200, http_version: '1.1' )
-			conn2 = instance_double( HTTPClient::Connection, finished?: true, pop: msg2 )
-
-			msg3 = instance_double( HTTP::Message, ok?: false, status_code: 500, http_version: '1.1' )
-			conn3 = instance_double( HTTPClient::Connection, finished?: true, pop: msg3 )
-
-			expect( monitor.client ).to receive( :head_async ).with( webservice_node1.uri.to_s ).
-				and_return( conn1 )
-			expect( monitor.client ).to receive( :head_async ).with( webservice_node2.uri.to_s ).
-				and_return( conn2 )
-			expect( monitor.client ).to receive( :head_async ).with( webservice_node3.uri.to_s ).
-				and_return( conn3 )
+		it "sets an error for HTTP error response statuses" do
+			Typhoeus.stub( /support\.acme/i ).and_return do |req|
+				Typhoeus::Response.new( code: 500, status_message: 'Server Error' )
+			end
+			Typhoeus.stub( /(www|store)\.acme/i ).and_return do |req|
+				Typhoeus::Response.new( code: 200, body: "OK" )
+			end
 
 			result = monitor.run( nodes_hash )
 
-			expect( result[webservice_node3.identifier] ).to include( error: '500 response' )
+			expect( result[webservice_node3.identifier] ).to include( error: '500 Server Error' )
 		end
+
+
+		it "sets an error for lower-layer error response statuses" do
+			Typhoeus.stub( /store\.acme/i ).and_return do |req|
+				Typhoeus::Response.new( code: 0, return_code: :couldnt_connect )
+			end
+			Typhoeus.stub( /(www|support)\.acme/i ).and_return do |req|
+				Typhoeus::Response.new( code: 200, body: "OK" )
+			end
+
+			result = monitor.run( nodes_hash )
+
+			expect( result[webservice_node2.identifier] ).to include( error: :couldnt_connect )
+		end
+
+
+		it "sets an error for timeouts" do
+			Typhoeus.stub( /store\.acme/i ).and_return do |req|
+				Typhoeus::Response.new( code: 0, return_code: :operation_timedout )
+			end
+			Typhoeus.stub( /(www|support)\.acme/i ).and_return do |req|
+				Typhoeus::Response.new( code: 200, body: "OK" )
+			end
+
+			result = monitor.run( nodes_hash )
+
+			expect( result[webservice_node2.identifier] ).to include( error: 'Request timed out.' )
+		end
+
+
+		it "doesn't error if HTTP error response status matches the expected status "
 
 	end
 

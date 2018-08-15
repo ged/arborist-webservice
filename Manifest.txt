@@ -10,5 +10,8 @@ Rakefile
 lib/arborist/monitor/webservice.rb
 lib/arborist/node/webservice.rb
 lib/arborist/webservice.rb
+lib/arborist/webservice/constants.rb
+spec/arborist/monitor/webservice_spec.rb
 spec/arborist/node/webservice_spec.rb
+spec/arborist/webservice_spec.rb
 spec/spec_helper.rb

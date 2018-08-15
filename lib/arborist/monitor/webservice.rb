@@ -1,17 +1,14 @@
 # -*- ruby -*-
 #encoding: utf-8
 
-require 'thread'
-require 'openssl'
+require 'typhoeus'
 
 require 'arborist'
 require 'arborist/mixins'
 require 'arborist/monitor' unless defined?( Arborist::Monitor )
-require 'arborist/monitor/connection_batching'
 
 require 'arborist/webservice'
 require 'arborist/webservice/constants'
-require 'arborist/webservice/connection'
 
 
 using Arborist::TimeRefinements
@@ -20,7 +17,6 @@ using Arborist::TimeRefinements
 # A web-service monitor type for Arborist
 module Arborist::Monitor::Webservice
 	extend Configurability
-	include Arborist::Webservice::Constants
 
 
 	configurability( 'arborist.monitors.webservice' ) do
@@ -32,6 +28,12 @@ module Arborist::Monitor::Webservice
 			Float( val )
 		end
 
+		##
+		# The maximum number of ongoing HTTP requests
+		setting :max_concurrency, default: 100 do |val|
+			Integer( val )
+		end
+
 	end
 
 
@@ -39,7 +41,7 @@ module Arborist::Monitor::Webservice
 	# Arborist HTML web service monitor logic
 	class HTML
 		extend Loggability
-		include Arborist::Monitor::ConnectionBatching
+		include Arborist::Webservice::Constants
 
 
 		log_to :arborist_webservice
@@ -91,60 +93,114 @@ module Arborist::Monitor::Webservice
 		end
 
 
-		### Return an Enumerator that lazily yields Hashes of the form expected by the
-		### ConnectionBatching mixin for each of the specified +nodes+.
-		def make_connections_enum( nodes )
-			return nodes.lazy.map do |identifier, node_data|
-				conn = nil
-				begin
-					conn = Arborist::Webservice::Connection.from_node_data( node_data )
-					conn.start_connecting
-				rescue => err
-					self.log.error "  %p setting up connection: %s" % [ err.class, err.message ]
-					conn = err
+		### Test HTTP connections for the specified +nodes+.
+		def run( nodes )
+			results = {}
+			hydra = Typhoeus::Hydra.new( self.runner_settings )
+
+			nodes.each do |identifier, node|
+				self.log.debug "Making request for node %s" % [ identifier ]
+				request = self.request_for_node( node )
+				request.on_complete do |response|
+					self.log.debug "Handling response for %s" % [ identifier ]
+					results[ identifier ] = self.make_response_results( response )
 				end
-
-				{ conn: conn, identifier: identifier }
+				hydra.queue( request )
 			end
+
+			hydra.run
+
+			return results
 		end
 
 
-		### Wait for one of the current connections to become "ready"; overridden to handle
-		### reading and writing.
-		def wait_for_ready_connections( wait_seconds )
-			sockets_w = self.connection_hashes.keys
-			sockets_r = sockets.select( &:readable? )
-
-			ready = nil
-
-			self.log.debug "Selecting on %d sockets." % [ sockets_r.length ]
-			readable, writable, _ = IO.select( sockets_r, sockets_w, nil, wait_seconds ) unless
-				sockets_r.empty?
-
-			ready = (writable & readable).find_all {|conn| conn.process_request }
-
-			return ready
-		end
-
-
-		### Build a status for the specified +conn_hash+ after its :conn has indicated
-		### it is ready.
-		def status_for_conn( conn_hash, duration )
-			conn = conn_hash[:conn]
-			res = conn.
-
-			return {
-				tcp_socket_connect: { duration: duration }
+		### Return a request object built to test the specified webservice +node+.
+		def request_for_node( node_data )
+			options = {
+				method: node_data['http_method'] || DEFAULT_HTTP_METHOD,
+				http_version: node_data['http_version'] || DEFAULT_HTTP_VERSION,
+				headers: self.make_headers_hash( node_data ),
+				body: node_data['body'],
+				timeout: self.timeout,
+				connecttimeout: self.timeout / 2.0,
 			}
-		rescue SocketError, SystemCallError => err
-			self.log.debug "Got %p while connecting to %s" % [ err.class, conn_hash[:identifier] ]
-			begin
-				sock.read( 1 )
-			rescue => err
-				return { error: err.message }
+
+			if ssl_opts = self.make_ssl_options( node_data['uri'], node_data )
+				options.merge!( ssl_opts )
 			end
-		ensure
-			sock.close if sock
+
+			return Typhoeus::Request.new( node_data['uri'], options )
+		end
+
+
+		### Make a Hash of SSL options if any are specified.
+		def make_ssl_options( uri, node_data )
+			return nil unless uri.start_with?( 'https:' )
+
+			ssl_attributes = SSL_ATTRIBUTES.each_with_object({}) do |(key, ssl_key), opts|
+				opts[ ssl_key ] = node_data[ key.to_s ] if node_data.key?( key.to_s )
+			end
+
+			return ssl_attributes
+		end
+
+
+		### Extract header values from the node_data, combine them with the defaults,
+		### and return them as a Hash.
+		def make_headers_hash( node_data )
+			headers = DEFAULT_HTTP_HEADERS.merge( node_data['http_headers'] || {} )
+			if node_data['body']
+				headers[ 'Content-type' ] ||= node_data['body_mimetype'] ||
+					 'application/x-www-form-urlencoded'
+			end
+
+			return headers
+		end
+
+
+		### Return a Hash of options to pass to the request runner.
+		def runner_settings
+			return {
+				max_concurrency: Arborist::Monitor::Webservice.max_concurrency,
+			}
+		end
+
+
+		### Return a Hash of results appropriate for the specified +response+.
+		def make_response_results( response )
+			if response.success?
+				return { webservice: self.success_results(response) }
+			elsif response.timed_out?
+				self.log.error "Request timed out."
+				return { error: 'Request timed out.' }
+			elsif response.code == 0
+				self.log.error "Non-HTTP response: %s." % [ response.return_code ]
+				return { error: response.return_code }
+			else
+				self.log.error "Got a %03d %s response." % [ response.code, response.status_message ]
+				return {
+					error: "%03d %s" % [ response.code, response.status_message ]
+				}
+			end
+		end
+
+
+		### Return the information hash attached to webservice nodes for successful
+		### responses.
+		def success_results( response )
+			return {
+				status: response.code,
+				status_message: response.status_message,
+				headers: response.headers_hash,
+				appconnect_time: response.appconnect_time,
+				connect_time: response.connect_time,
+				lookup_time: response.name_lookup_time,
+				pretransfer_time: response.pretransfer_time,
+				redirect_count: response.redirect_count,
+				redirect_time: response.redirect_time,
+				start_transfer_time: response.start_transfer_time,
+				total_time: response.total_time,
+			}
 		end
 
 	end # class HTML

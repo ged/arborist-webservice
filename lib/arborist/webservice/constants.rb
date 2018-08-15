@@ -22,6 +22,9 @@ module Arborist::Webservice::Constants
 		'User-Agent' => "Arborist-WebService/%s" % [ Arborist::Webservice::VERSION ],
 	}.freeze
 
+	# The HTTP verb to use in the request line by default
+	DEFAULT_HTTP_METHOD = 'GET'
+
 	# The version of HTTP to use in the request line
 	DEFAULT_HTTP_VERSION = '1.0'
 

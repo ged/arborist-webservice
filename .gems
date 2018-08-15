@@ -1,8 +1,7 @@
 hoe-deveiate
 arborist
-httpclient
 rdoc
 simplecov
-httpray
+typhoeus
 hoe
 
