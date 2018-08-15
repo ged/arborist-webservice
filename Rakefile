@@ -29,13 +29,13 @@ hoespec = Hoe.spec 'arborist-webservice' do |spec|
 
 	spec.developer 'Michael Granger', 'ged@FaerieMUD.org'
 
-	spec.dependency 'arborist', '~> 0'
-	spec.dependency 'loggability', '~> 0.11'
+	spec.dependency 'arborist', '~> 0.2'
+	spec.dependency 'loggability', '~> 0.14'
 	spec.dependency 'typhoeus', '~> 1.3'
 
-	spec.dependency 'hoe-deveiate',            '~> 0.3', :developer
+	spec.dependency 'hoe-deveiate',            '~> 0.10', :developer
 	spec.dependency 'simplecov',               '~> 0.7', :developer
-	spec.dependency 'rdoc-generator-fivefish', '~> 0.1', :developer
+	spec.dependency 'rdoc-generator-fivefish', '~> 0.4', :developer
 
 	spec.hg_sign_tags = true if spec.respond_to?( :hg_sign_tags= )
 	spec.check_history_on_release = true if spec.respond_to?( :check_history_on_release= )
