@@ -1,9 +1,9 @@
 # -*- encoding: utf-8 -*-
-# stub: arborist-webservice 0.0.1.pre20180815114513 ruby lib
+# stub: arborist-webservice 0.0.1.pre20180815115950 ruby lib
 
 Gem::Specification.new do |s|
   s.name = "arborist-webservice".freeze
-  s.version = "0.0.1.pre20180815114513"
+  s.version = "0.0.1.pre20180815115950"
 
   s.required_rubygems_version = Gem::Requirement.new("> 1.3.1".freeze) if s.respond_to? :required_rubygems_version=
   s.require_paths = ["lib".freeze]

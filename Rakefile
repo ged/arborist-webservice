@@ -69,11 +69,11 @@ if File.directory?( '.hg' )
 
 	Rake::Task[ 'docs' ].clear
 	RDoc::Task.new( 'docs' ) do |rdoc|
-	    rdoc.main = "README.rdoc"
+	    rdoc.main = "README.md"
 		rdoc.markup = 'markdown'
-	    rdoc.rdoc_files.include( "*.rdoc", "ChangeLog", "lib/**/*.rb" )
+	    rdoc.rdoc_files.include( "*.rdoc", "*.md", "ChangeLog", "lib/**/*.rb" )
 	    rdoc.generator = :fivefish
-		rdoc.title = 'Webservice Node Type for Arborist'
+		rdoc.title = 'Webservice Node Type and Monitor for Arborist'
 	    rdoc.rdoc_dir = 'doc'
 	end
 end

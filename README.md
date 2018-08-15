@@ -69,7 +69,7 @@ and generate the API documentation.
 
 ## License
 
-Copyright (c) 2016, Michael Granger
+Copyright (c) 2016-2018, Michael Granger
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
