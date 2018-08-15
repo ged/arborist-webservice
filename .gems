@@ -3,5 +3,6 @@ arborist
 httpclient
 rdoc
 simplecov
+httpray
 hoe
 

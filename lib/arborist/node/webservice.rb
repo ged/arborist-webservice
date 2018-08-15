@@ -4,23 +4,16 @@
 require 'loggability'
 
 require 'arborist'
-require 'arborist/webservice'
 require 'arborist/node/service' unless defined?( Arborist::Node::Service )
+
+require 'arborist/webservice'
+require 'arborist/webservice/constants'
 
 
 # A web-service node type for Arborist
 class Arborist::Node::Webservice < Arborist::Node::Service
 	extend Loggability
-
-
-	# The default HTTP verb to use for monitoring requests
-	DEFAULT_HTTP_METHOD = 'HEAD'
-
-	# The default HTTP status code to expect from responses
-	DEFAULT_EXPECTED_STATUS = 200
-
-	# The default Content-type to use for requests with a body
-	DEFAULT_BODY_MIMETYPE = 'text/plain'
+	include Arborist::Webservice::Constants
 
 
 	# Loggability API -- use the logger for this library
@@ -40,6 +33,7 @@ class Arborist::Node::Webservice < Arborist::Node::Service
 		attributes[:protocol] = 'tcp'
 		attributes[:app_protocol] = 'http'
 		attributes[:http_method] ||= DEFAULT_HTTP_METHOD
+		attributes[:http_headers] ||= {}
 		attributes[:expected_status] ||= DEFAULT_EXPECTED_STATUS
 		attributes[:body] ||= ''
 		attributes[:body_mimetype] ||= DEFAULT_BODY_MIMETYPE
@@ -72,6 +66,11 @@ class Arborist::Node::Webservice < Arborist::Node::Service
 	##
 	# The body_mimetype used by the service
 	dsl_accessor :body_mimetype
+
+
+	SSL_ATTRIBUTES.each_key do |attrname|
+		dsl_accessor( attrname )
+	end
 
 
 	### Set node +attributes+ from a Hash.

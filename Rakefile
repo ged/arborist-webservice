@@ -31,7 +31,7 @@ hoespec = Hoe.spec 'arborist-webservice' do |spec|
 
 	spec.dependency 'arborist', '~> 0'
 	spec.dependency 'loggability', '~> 0.11'
-	spec.dependency 'httpclient', '~> 2.7'
+	spec.dependency 'httpray', '~> 1.1'
 
 	spec.dependency 'hoe-deveiate',            '~> 0.3', :developer
 	spec.dependency 'simplecov',               '~> 0.7', :developer
