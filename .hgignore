@@ -8,3 +8,4 @@ doc/
 arborist\.(state|tree)$
 \.monitor$
 pkg/
+\.gem$
