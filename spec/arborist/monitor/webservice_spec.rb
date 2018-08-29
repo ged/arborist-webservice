@@ -18,7 +18,7 @@ describe Arborist::Monitor::Webservice do
 	end
 
 
-	describe Arborist::Monitor::Webservice::HTML do
+	describe Arborist::Monitor::Webservice::HTTP do
 
 		let( :monitor ) { described_class.new }
 		let( :host_node ) do

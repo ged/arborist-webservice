@@ -38,8 +38,8 @@ module Arborist::Monitor::Webservice
 
 
 
-	# Arborist HTML web service monitor logic
-	class HTML
+	# Arborist HTTP web service monitor logic
+	class HTTP
 		extend Loggability
 		include Arborist::Webservice::Constants
 
@@ -68,7 +68,7 @@ module Arborist::Monitor::Webservice
 		end
 
 
-		### Create a new HTML webservice monitor with the specified +options+. Valid options are:
+		### Create a new HTTP webservice monitor with the specified +options+. Valid options are:
 		###
 		### +:timeout+
 		###   Set the number of seconds to wait for a connection for each node.
@@ -203,11 +203,11 @@ module Arborist::Monitor::Webservice
 			}
 		end
 
-	end # class HTML
+	end # class HTTP
 
 
 	# Arborist REST webservice monitor logic
-	class REST < Arborist::Monitor::Webservice::HTML
+	class REST < Arborist::Monitor::Webservice::HTTP
 	end # class REST
 
 end # class Arborist::Monitor::Webservice
