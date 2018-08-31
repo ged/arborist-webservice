@@ -34,6 +34,14 @@ module Arborist::Monitor::Webservice
 			Integer( val )
 		end
 
+		##
+		# Whether or not to enable SSL peer certificate verification by default. The
+		# value is either `1` to enable it by default, or `0` to disable it by default.
+		# The config of each invidual webservice node can override this.
+		setting :ssl_verifypeer, default: 1 do |val|
+			Integer( val ).nonzero? ? 1 : 0
+		end
+
 	end
 
 
@@ -53,7 +61,7 @@ module Arborist::Monitor::Webservice
 		}
 
 		# The array of node properites used by this monitor
-		NODE_PROPERTIES = %i[ uri http_method body body_mimetype ].freeze
+		NODE_PROPERTIES = %i[ uri http_method body body_mimetype config ].freeze
 
 
 		### Return an array of attributes to fetch from nodes for this monitor.
@@ -103,7 +111,8 @@ module Arborist::Monitor::Webservice
 				request = self.request_for_node( node )
 				request.on_complete do |response|
 					self.log.debug "Handling response for %s" % [ identifier ]
-					results[ identifier ] = self.make_response_results( response )
+					results[ identifier ] =
+						self.make_response_results( response, node['expected_status'] )
 				end
 				hydra.queue( request )
 			end
@@ -116,9 +125,11 @@ module Arborist::Monitor::Webservice
 
 		### Return a request object built to test the specified webservice +node+.
 		def request_for_node( node_data )
+			http_version = convert_http_version( node_data['http_version'] || DEFAULT_HTTP_VERSION )
+
 			options = {
 				method: node_data['http_method'] || DEFAULT_HTTP_METHOD,
-				http_version: node_data['http_version'] || DEFAULT_HTTP_VERSION,
+				http_version: http_version,
 				headers: self.make_headers_hash( node_data ),
 				body: node_data['body'],
 				timeout: self.timeout,
@@ -129,6 +140,7 @@ module Arborist::Monitor::Webservice
 				options.merge!( ssl_opts )
 			end
 
+			self.log.debug "Node options for %p are: %p" % [ node_data['uri'], options ]
 			return Typhoeus::Request.new( node_data['uri'], options )
 		end
 
@@ -137,9 +149,14 @@ module Arborist::Monitor::Webservice
 		def make_ssl_options( uri, node_data )
 			return nil unless uri.start_with?( 'https:' )
 
-			ssl_attributes = SSL_ATTRIBUTES.each_with_object({}) do |(key, ssl_key), opts|
-				opts[ ssl_key ] = node_data[ key.to_s ] if node_data.key?( key.to_s )
+			self.log.debug "Extracting valid SSL options from the node's config: %p" %
+				[ node_data['config'] ]
+			ssl_attributes = SSL_ATTRIBUTES.each_with_object({}) do |(key, desc), opts|
+				opts[ key ] = node_data[ 'config' ][ key.to_s ] if
+					node_data['config']&.key?( key.to_s )
 			end
+
+			ssl_attributes[ :ssl_verifypeer ] ||= Arborist::Monitor::Webservice.ssl_verifypeer
 
 			return ssl_attributes
 		end
@@ -167,17 +184,18 @@ module Arborist::Monitor::Webservice
 
 
 		### Return a Hash of results appropriate for the specified +response+.
-		def make_response_results( response )
-			if response.success?
+		def make_response_results( response, expected_status=200 )
+			if response.code == expected_status
 				return { webservice: self.success_results(response) }
 			elsif response.timed_out?
 				self.log.error "Request timed out."
 				return { error: 'Request timed out.' }
 			elsif response.code == 0
-				self.log.error "Non-HTTP response: %s." % [ response.return_code ]
-				return { error: response.return_code }
+				self.log.error( response.return_message )
+				return { error: response.return_message }
 			else
-				self.log.error "Got a %03d %s response." % [ response.code, response.status_message ]
+				self.log.error "Got an unexpected %03d %s response; expected %03d." %
+					[ response.code, response.status_message, expected_status ]
 				return {
 					error: "%03d %s" % [ response.code, response.status_message ]
 				}
@@ -189,6 +207,7 @@ module Arborist::Monitor::Webservice
 		### responses.
 		def success_results( response )
 			return {
+				http_version: response.http_version,
 				status: response.code,
 				status_message: response.status_message,
 				headers: response.headers_hash,
@@ -201,6 +220,26 @@ module Arborist::Monitor::Webservice
 				start_transfer_time: response.start_transfer_time,
 				total_time: response.total_time,
 			}
+		end
+
+
+		#######
+		private
+		#######
+
+		### Convert a version string like `1.1` into the Symbol Typhoeus/Ethon expect
+		### (e.g., `:httpv1_1`)
+		def convert_http_version( version_string )
+			return case version_string
+				when '1.0'
+					:httpv1_0
+				when '1.1'
+					:httpv1_1
+				when '2.0'
+					:httpv2_0
+				else
+					version_string.to_sym
+				end
 		end
 
 	end # class HTTP

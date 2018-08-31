@@ -25,14 +25,11 @@ class Arborist::Node::Webservice < Arborist::Node::Service
 
 	### Create a new Webservice node.
 	def initialize( identifier, host, uri, attributes={}, &block )
-		@uri = uri
-		uri_obj = URI( uri )
-
-		attributes[:app_protocol] ||= uri_obj.scheme
-		attributes[:port] ||= uri_obj.port
+		attributes[:uri] = URI( uri )
 		attributes[:protocol] = 'tcp'
 		attributes[:app_protocol] = 'http'
 		attributes[:http_method] ||= DEFAULT_HTTP_METHOD
+		attributes[:http_version] ||= DEFAULT_HTTP_VERSION
 		attributes[:http_headers] ||= {}
 		attributes[:expected_status] ||= DEFAULT_EXPECTED_STATUS
 		attributes[:body] ||= ''
@@ -48,12 +45,12 @@ class Arborist::Node::Webservice < Arborist::Node::Service
 	######
 
 	##
-	# The URI of an endpoint that can be used to monitor the webservice
-	dsl_accessor :uri
-
-	##
 	# The http_method used by the service
 	dsl_accessor :http_method
+
+	##
+	# The http version used by the service
+	dsl_accessor :http_version
 
 	##
 	# The expected_status used by the service
@@ -73,6 +70,20 @@ class Arborist::Node::Webservice < Arborist::Node::Service
 	end
 
 
+	### Get/set the URI of the service.
+	def uri( new_uri=nil )
+		if new_uri
+			@uri = URI( new_uri )
+			@uri.host ||= self.addresses.first.to_s
+
+			self.app_protocol( @uri.scheme )
+			self.port( @uri.port )
+		end
+
+		return @uri.to_s
+	end
+
+
 	### Set node +attributes+ from a Hash.
 	def modify( attributes )
 		attributes = stringify_keys( attributes )
@@ -81,6 +92,7 @@ class Arborist::Node::Webservice < Arborist::Node::Service
 
 		self.uri( attributes['uri'] )
 		self.http_method( attributes['http_method'] )
+		self.http_version( attributes['http_version'] )
 		self.expected_status( attributes['expected_status'] )
 		self.body( attributes['body'] )
 		self.body_mimetype( attributes['body_mimetype'] )
@@ -95,6 +107,8 @@ class Arborist::Node::Webservice < Arborist::Node::Service
 				URI( self.uri ) == URI( val )
 			when 'http_method'
 				self.http_method == val
+			when 'http_version'
+				self.http_version == val
 			when 'expected_status'
 				self.expected_status == val
 			when 'body'
@@ -122,10 +136,11 @@ class Arborist::Node::Webservice < Arborist::Node::Service
 
 	### Return service-node-specific information for #inspect.
 	def node_description
-		desc = "%s %s %s/1.1" % [
+		desc = "%s %s %s/%s" % [
 			self.http_method,
 			self.uri,
 			self.app_protocol.upcase,
+			self.http_version,
 		]
 
 		if body && !body.empty?

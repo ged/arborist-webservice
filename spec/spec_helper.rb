@@ -6,6 +6,17 @@ require 'simplecov' if ENV['COVERAGE']
 require 'rspec'
 
 require 'loggability/spechelpers'
+require 'arborist'
+require 'arborist/mixins'
+require 'arborist/webservice'
+
+
+RSpec::Matchers.define( :match_criteria ) do |criteria|
+	match do |node|
+		criteria = Arborist::HashUtilities.stringify_keys( criteria )
+		node.matches?( criteria )
+	end
+end
 
 
 ### Mock with RSpec

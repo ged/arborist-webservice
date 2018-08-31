@@ -30,7 +30,7 @@ The simplest example is an unauthenticated REST service running on port 80:
     end
 
 This adds a `webservice` child node to the containing host with an identifier of
-`frontend-17-api-example-com-webservice`.
+`example-webserver-api-vi`.
 
 The simplest monitor setup to monitor that service might look something like:
 
@@ -38,9 +38,9 @@ The simplest monitor setup to monitor that service might look something like:
     #encoding: utf-8
     
     require 'arborist/monitor/webservice'
-    Arborist::Monitor::Webservice::REST.default
+    Arborist::Monitor::Webservice::HTTP.default
 
-This would check that an OPTIONS HTTP request to `http://api.example.com/v1/heartbeat` responds with a 2xx status code.
+This would check that an HEAD HTTP request to `http://api.example.com/v1/heartbeat` responds with a 2xx status code.
 
 
 ## Prerequisites

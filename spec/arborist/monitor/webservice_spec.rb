@@ -79,7 +79,7 @@ describe Arborist::Monitor::Webservice do
 		end
 
 
-		it "sets an error for lower-layer error response statuses" do
+		it "sets a human-readable error message for lower-layer error response statuses" do
 			Typhoeus.stub( /store\.acme/i ).and_return do |req|
 				Typhoeus::Response.new( code: 0, return_code: :couldnt_connect )
 			end
@@ -89,7 +89,7 @@ describe Arborist::Monitor::Webservice do
 
 			result = monitor.run( nodes_hash )
 
-			expect( result[webservice_node2.identifier] ).to include( error: :couldnt_connect )
+			expect( result[webservice_node2.identifier] ).to include( error: "Couldn't connect to server" )
 		end
 
 
@@ -107,7 +107,58 @@ describe Arborist::Monitor::Webservice do
 		end
 
 
-		it "doesn't error if HTTP error response status matches the expected status "
+		it "doesn't error if HTTP error response status matches the expected status" do
+			Typhoeus.stub( /store\.acme/i ).and_return do |req|
+				Typhoeus::Response.new( code: 401, status_message: 'Access denied' )
+			end
+			Typhoeus.stub( /(www|support)\.acme/i ).and_return do |req|
+				Typhoeus::Response.new( code: 200, body: "OK" )
+			end
+
+			webservice_node2.expected_status( 401 )
+			result = monitor.run( nodes_hash )
+
+			expect( result[webservice_node2.identifier] ).to_not include( :error )
+		end
+
+
+		it "posts with the provided body if one is set" do
+			Typhoeus.stub( /support\.acme/i ).and_return do |req|
+				expect( req.options[:method] ).to eq( 'POST' )
+				expect( req.options[:body] ).to eq( '[1, 2, 3, 4]' )
+				expect( req.options[:headers] ).to include( 'Content-type' => 'application/json' )
+				Typhoeus::Response.new( code: 201, status_message: 'Object created' )
+			end
+			Typhoeus.stub( /(www|store)\.acme/i ).and_return do |req|
+				Typhoeus::Response.new( code: 200, body: "OK" )
+			end
+
+			webservice_node3.http_method( 'POST' )
+			webservice_node3.body( '[1, 2, 3, 4]' )
+			webservice_node3.body_mimetype( 'application/json' )
+			webservice_node3.expected_status( 201 )
+
+			result = monitor.run( nodes_hash )
+
+			expect( result.keys ).to contain_exactly( *nodes.map(&:identifier) )
+		end
+
+
+		it "uses valid entries from the node's config as SSL configuration" do
+			Typhoeus.stub( /acme/i ).and_return do |req|
+				expect( req.options[:ssl_verifypeer] ).to eq( 0 )
+				Typhoeus::Response.new( code: 200, body: "OK" )
+			end
+
+			nodes.each do |node|
+				node.config( ssl_verifypeer: 0 )
+			end
+
+			result = monitor.run( nodes_hash )
+
+			expect( result ).to be_a( Hash )
+			expect( result.keys ).to contain_exactly( *nodes.map(&:identifier) )
+		end
 
 	end
 
