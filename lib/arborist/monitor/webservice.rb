@@ -194,11 +194,10 @@ module Arborist::Monitor::Webservice
 				self.log.error( response.return_message )
 				return { error: response.return_message }
 			else
-				self.log.error "Got an unexpected %03d %s response; expected %03d." %
+				errmsg = "Got an unexpected %03d %s response; expected %03d." %
 					[ response.code, response.status_message, expected_status ]
-				return {
-					error: "%03d %s" % [ response.code, response.status_message ]
-				}
+				self.log.error( errmsg )
+				return { error: errmsg }
 			end
 		end
 
