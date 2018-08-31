@@ -1,15 +1,15 @@
 # -*- encoding: utf-8 -*-
-# stub: arborist-webservice 0.0.1.pre20180815115950 ruby lib
+# stub: arborist-webservice 0.0.1.pre20180830172507 ruby lib
 
 Gem::Specification.new do |s|
   s.name = "arborist-webservice".freeze
-  s.version = "0.0.1.pre20180815115950"
+  s.version = "0.0.1.pre20180830172507"
 
   s.required_rubygems_version = Gem::Requirement.new("> 1.3.1".freeze) if s.respond_to? :required_rubygems_version=
   s.require_paths = ["lib".freeze]
   s.authors = ["Michael Granger".freeze]
   s.cert_chain = ["certs/ged.pem".freeze]
-  s.date = "2018-08-15"
+  s.date = "2018-08-31"
   s.description = "This is a collection of webservice monitoring tools for the Arborist monitoring toolkit (http://arbori.st/).\n\nIt can be used to describe and monitor HTTP services in more detail than a simple port check.".freeze
   s.email = ["ged@FaerieMUD.org".freeze]
   s.extra_rdoc_files = ["History.md".freeze, "Manifest.txt".freeze, "README.md".freeze, "History.md".freeze, "README.md".freeze]
