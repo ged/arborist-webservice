@@ -188,8 +188,9 @@ module Arborist::Monitor::Webservice
 			if response.code == expected_status
 				return { webservice: self.success_results(response) }
 			elsif response.timed_out?
-				self.log.error "Request timed out."
-				return { error: 'Request timed out.' }
+				errmsg = "Request timed out after %0.1f seconds." % [ self.timeout ]
+				self.log.error( errmsg )
+				return { error: errmsg }
 			elsif response.code == 0
 				self.log.error( response.return_message )
 				return { error: response.return_message }
