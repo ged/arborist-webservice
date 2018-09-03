@@ -20,7 +20,7 @@ describe Arborist::Node::Webservice do
 	let( :node ) { host_node.webservice('api', 'https://example.com/api/v1') }
 	let( :getonly_node ) do
 		host_node.webservice( 'repo-api', 'https://repo.example.com/' ) do
-			http_method 'GET'
+			http_method :GET
 		end
 	end
 	let( :http10_node ) do

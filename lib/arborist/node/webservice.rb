@@ -106,7 +106,7 @@ class Arborist::Node::Webservice < Arborist::Node::Service
 			when 'uri'
 				URI( self.uri ) == URI( val )
 			when 'http_method'
-				self.http_method == val
+				self.http_method.to_s == val
 			when 'http_version'
 				self.http_version == val
 			when 'expected_status'
