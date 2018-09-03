@@ -112,7 +112,7 @@ module Arborist::Monitor::Webservice
 				request.on_complete do |response|
 					self.log.debug "Handling response for %s" % [ identifier ]
 					results[ identifier ] =
-						self.make_response_results( response, node['expected_status'] )
+						self.make_response_results( response, node )
 				end
 				hydra.queue( request )
 			end
@@ -184,8 +184,8 @@ module Arborist::Monitor::Webservice
 
 
 		### Return a Hash of results appropriate for the specified +response+.
-		def make_response_results( response, expected_status=200 )
-			if response.code == expected_status
+		def make_response_results( response, node )
+			if response.code == node[ 'expected_status' ]
 				return { webservice: self.success_results(response) }
 			elsif response.timed_out?
 				errmsg = "Request timed out after %0.1f seconds." % [ self.timeout ]
@@ -196,7 +196,7 @@ module Arborist::Monitor::Webservice
 				return { error: response.return_message }
 			else
 				errmsg = "Got an unexpected %03d %s response; expected %03d." %
-					[ response.code, response.status_message, expected_status ]
+					[ response.code, response.status_message, node['expected_status'] ]
 				self.log.error( errmsg )
 				return { error: errmsg }
 			end
