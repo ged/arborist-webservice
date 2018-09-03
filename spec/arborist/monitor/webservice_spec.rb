@@ -36,7 +36,7 @@ describe Arborist::Monitor::Webservice do
 		let( :nodes ) {[ webservice_node1, webservice_node2, webservice_node3 ]}
 		let( :nodes_hash ) do
 			nodes.each_with_object({}) do |node, accum|
-				accum[ node.identifier ] = node.fetch_values
+				accum[ node.identifier ] = node.fetch_values( described_class.node_properties.map( &:to_s ) )
 			end
 		end
 

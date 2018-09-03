@@ -61,7 +61,7 @@ module Arborist::Monitor::Webservice
 		}
 
 		# The array of node properites used by this monitor
-		NODE_PROPERTIES = %i[ uri http_method body body_mimetype config ].freeze
+		NODE_PROPERTIES = %i[ uri expected_status http_method body body_mimetype config ].freeze
 
 
 		### Return an array of attributes to fetch from nodes for this monitor.
