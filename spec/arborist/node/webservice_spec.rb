@@ -70,5 +70,11 @@ describe Arborist::Node::Webservice do
 	end
 
 
+	it "allows shorthand URI syntax with a port for implicit host" do
+		node = host_node.webservice( 'djinn', 'http://:8080/' )
+		expect( node.uri ).to eq( 'http://192.168.66.12:8080/' )
+	end
+
+
 end
 
