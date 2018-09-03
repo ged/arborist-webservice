@@ -75,7 +75,7 @@ describe Arborist::Monitor::Webservice do
 
 			result = monitor.run( nodes_hash )
 
-			expect( result[webservice_node3.identifier] ).to include( error: '500 Server Error' )
+			expect( result[webservice_node3.identifier] ).to include( error: /Got an unexpected 500 Server Error/ )
 		end
 
 
@@ -103,7 +103,7 @@ describe Arborist::Monitor::Webservice do
 
 			result = monitor.run( nodes_hash )
 
-			expect( result[webservice_node2.identifier] ).to include( error: 'Request timed out.' )
+			expect( result[webservice_node2.identifier] ).to include( error: /Request timed out after/ )
 		end
 
 
